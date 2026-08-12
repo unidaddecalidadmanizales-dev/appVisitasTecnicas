@@ -133,6 +133,60 @@ export type Database = {
           },
         ]
       }
+      conexiones_reinicio: {
+        Row: {
+          id: boolean
+          reiniciado_en: string
+        }
+        Insert: {
+          id?: boolean
+          reiniciado_en?: string
+        }
+        Update: {
+          id?: boolean
+          reiniciado_en?: string
+        }
+        Relationships: []
+      }
+      impersonaciones: {
+        Row: {
+          admin_id: string
+          conexion_previa: string | null
+          creada_en: string
+          id: string
+          profesional_id: string
+        }
+        Insert: {
+          admin_id: string
+          conexion_previa?: string | null
+          creada_en?: string
+          id?: string
+          profesional_id: string
+        }
+        Update: {
+          admin_id?: string
+          conexion_previa?: string | null
+          creada_en?: string
+          id?: string
+          profesional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impersonaciones_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profesionales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "impersonaciones_profesional_id_fkey"
+            columns: ["profesional_id"]
+            isOneToOne: false
+            referencedRelation: "profesionales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       indicadores: {
         Row: {
           area: string

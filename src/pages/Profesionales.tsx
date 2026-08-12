@@ -325,13 +325,14 @@ function EditarProfesionalDialog({ profesional }: { profesional: Profesional }) 
 }
 
 /**
- * Formatea la última conexión. `null` significa que la cuenta existe pero esa
- * persona nunca ha iniciado sesión — es información útil por sí misma, así que
- * se dice explícitamente en vez de dejar la celda vacía.
+ * Formatea la última conexión. `undefined` es "todavía cargando"; `null` es
+ * "sin conexión registrada", que cubre dos casos que no conviene distinguir en
+ * la tabla: quien nunca ha entrado, y quien no ha vuelto a entrar desde que se
+ * reinició el contador. Entrar actuando como esa persona no cuenta.
  */
 function textoUltimaConexion(iso: string | null | undefined) {
   if (iso === undefined) return '—'
-  if (iso === null) return 'Nunca ha entrado'
+  if (iso === null) return 'Sin registro'
   return new Date(iso).toLocaleString('es-CO', {
     dateStyle: 'medium',
     timeStyle: 'short',

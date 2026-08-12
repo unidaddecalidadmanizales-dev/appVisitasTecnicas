@@ -62,6 +62,30 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'No tiene sentido actuar como otra cuenta administrador' }, 400)
     }
 
+    // Impersonar inicia una sesión real, y GoTrue sobrescribe con ella el
+    // `last_sign_in_at` del profesional — un único valor, sin historia. Se
+    // guarda el valor previo ANTES de generar el enlace para que la columna
+    // "Última conexión" siga mostrando cuándo entró esa persona de verdad y
+    // no cuándo el administrador entró a su cuenta.
+    const { data: authObjetivo, error: authErr } =
+      await admin.auth.admin.getUserById(profesionalId)
+    if (authErr) return jsonResponse({ error: authErr.message }, 500)
+
+    const { error: registroErr } = await admin.from('impersonaciones').insert({
+      admin_id: userData.user.id,
+      profesional_id: profesionalId,
+      conexion_previa: authObjetivo?.user?.last_sign_in_at ?? null,
+    })
+    // Se corta aquí a propósito: sin este registro la impersonación falsearía
+    // la última conexión de esa persona y no quedaría rastro de quién entró a
+    // su cuenta. Es preferible no impersonar a hacerlo sin dejar huella.
+    if (registroErr) {
+      return jsonResponse(
+        { error: 'No se pudo registrar la impersonación: ' + registroErr.message },
+        500,
+      )
+    }
+
     const { data: link, error: linkErr } = await admin.auth.admin.generateLink({
       type: 'magiclink',
       email: objetivo.email,
