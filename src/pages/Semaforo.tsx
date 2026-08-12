@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { getInstituciones } from '@/lib/queries/instituciones'
@@ -85,9 +85,10 @@ function ValoracionAsistencias({
 }
 
 export default function Semaforo() {
-  // `undefined` = todo el histórico, sin corte por año. Por defecto se
-  // selecciona el año más reciente con datos en cuanto se conoce (ver el
-  // efecto abajo) — antes de eso no se puede saber cuál es.
+  // `undefined` = todo el histórico, sin corte por año. Arranca así porque
+  // antes de que lleguen los resultados no se sabe cuál es "el último año con
+  // datos" — el efecto de abajo lo fija en cuanto se conoce, y solo si el
+  // usuario no ha tocado el selector todavía (para no pisarle una elección).
   const [anio, setAnio] = useState<number | undefined>(undefined)
   const [anioTocado, setAnioTocado] = useState(false)
 
@@ -106,7 +107,20 @@ export default function Semaforo() {
 
   const isLoading = cargandoInst || cargandoProc || cargandoRes
 
+  // Viene ordenado de más reciente a más antiguo (ver aniosConDatos), así que
+  // el primer elemento es el año por defecto.
   const anios = useMemo(() => aniosConDatos(resultados), [resultados])
+
+  useEffect(() => {
+    if (anioTocado || anios.length === 0) return
+    setAnio(anios[0])
+  }, [anios, anioTocado])
+
+  function cambiarAnio(nuevo: number | undefined) {
+    setAnioTocado(true)
+    setAnio(nuevo)
+  }
+
   const celdas = useMemo(
     () => construirCeldas(resultados, anio),
     [resultados, anio],
@@ -135,7 +149,7 @@ export default function Semaforo() {
             filtros={filtros}
             anios={anios}
             anio={anio}
-            onAnioChange={setAnio}
+            onAnioChange={cambiarAnio}
             totalInstituciones={instituciones.length}
             totalProcesos={procesos.length}
           />

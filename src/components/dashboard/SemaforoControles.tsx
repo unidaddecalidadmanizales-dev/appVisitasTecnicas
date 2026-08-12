@@ -47,11 +47,13 @@ export function SemaforoControles({
               variant={anio === undefined ? 'default' : 'outline'}
               aria-pressed={anio === undefined}
               onClick={() => onAnioChange(undefined)}
-              // No dice "Hoy" porque hay asistencias con fecha futura: esta
-              // vista es "lo último registrado", no "lo de hasta hoy".
+              // No dice "Hoy" ni "Actual" porque hay asistencias con fecha
+              // futura: esta vista es "lo último registrado", no "lo de
+              // hasta hoy". "Todo" describe sin ambigüedad que es el
+              // histórico completo, sin corte por año.
               title="La última asistencia técnica de cada institución y proceso, sin corte por año"
             >
-              Actual
+              Todo
             </Button>
             {anios.map((a) => (
               <Button
