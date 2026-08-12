@@ -391,12 +391,20 @@ export type Database = {
     }
     Functions: {
       actualizar_mi_firma: { Args: { p_firma_url: string }; Returns: undefined }
+      is_administrador: { Args: never; Returns: boolean }
       is_coordinador: { Args: never; Returns: boolean }
       marcar_password_cambiada: { Args: never; Returns: undefined }
       reordenar_indicadores: { Args: { p_cambios: Json }; Returns: undefined }
       siguiente_numero_visita: {
         Args: { p_institucion: string; p_proceso: string }
         Returns: number
+      }
+      ultimas_conexiones: {
+        Args: never
+        Returns: {
+          profesional_id: string
+          ultima_conexion: string
+        }[]
       }
     }
     Enums: {

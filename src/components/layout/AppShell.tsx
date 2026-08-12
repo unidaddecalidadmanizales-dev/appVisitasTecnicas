@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, Navigate, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -13,13 +13,12 @@ import {
   UserCircle,
   UserCog,
   LogOut,
-  Loader2,
   Menu,
   X,
 } from 'lucide-react'
-import { toast } from 'sonner'
 import { useAuth, type Rol } from '@/hooks/useAuth'
-import { nombreImpersonado, volverACuentaOriginal } from '@/lib/impersonacion'
+import { estaImpersonando } from '@/lib/impersonacion'
+import { BannerImpersonacion } from '@/components/layout/BannerImpersonacion'
 import { cn } from '@/lib/utils'
 import escudoManizales from '@/assets/escudo-manizales.png'
 import { Button } from '@/components/ui/button'
@@ -155,60 +154,19 @@ function UserMenu() {
   )
 }
 
-function BannerImpersonacion() {
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const [nombre, setNombre] = useState<string | null>(null)
-  const [volviendo, setVolviendo] = useState(false)
-
-  // Se re-revisa cada vez que cambia el usuario autenticado: eso ocurre
-  // exactamente cuando arranca o termina una impersonación (verifyOtp/
-  // setSession disparan onAuthStateChange), sin depender de un remount.
-  useEffect(() => {
-    setNombre(nombreImpersonado())
-  }, [user?.id])
-
-  if (!nombre) return null
-
-  async function volver() {
-    setVolviendo(true)
-    try {
-      await volverACuentaOriginal()
-      navigate('/semaforo', { replace: true })
-    } catch (e) {
-      toast.error('No se pudo volver a tu cuenta', {
-        description: e instanceof Error ? e.message : undefined,
-      })
-    } finally {
-      setVolviendo(false)
-    }
-  }
-
-  return (
-    <div className="flex items-center justify-between gap-3 bg-amber-500/15 px-4 py-2 text-sm text-amber-900 dark:text-amber-300">
-      <span className="flex items-center gap-2">
-        <UserCog className="size-4 shrink-0" />
-        Estás actuando como <strong>{nombre}</strong>
-      </span>
-      <Button size="sm" variant="outline" disabled={volviendo} onClick={volver}>
-        {volviendo ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          <LogOut className="size-4" />
-        )}
-        Volver a mi cuenta
-      </Button>
-    </div>
-  )
-}
-
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { profesional, rol } = useAuth()
 
   // Primer ingreso con contraseña puesta por el coordinador: no se puede ver
   // el resto de la app hasta definir una contraseña propia.
-  if (profesional?.debe_cambiar_password) {
+  //
+  // Se omite al actuar como otro profesional, por dos razones: el
+  // administrador no debe definir la contraseña de otra persona (es de esa
+  // persona, no suya), y esa pantalla vive fuera del AppShell, así que
+  // redirigir allí dejaba al administrador sin el banner para volver a su
+  // propia cuenta — atrapado, con la única salida de cerrar sesión.
+  if (profesional?.debe_cambiar_password && !estaImpersonando()) {
     return <Navigate to="/cambiar-password-obligatorio" replace />
   }
 

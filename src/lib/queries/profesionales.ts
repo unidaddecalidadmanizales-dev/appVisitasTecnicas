@@ -67,6 +67,27 @@ export async function actualizarMiFirma(url: string): Promise<void> {
   if (error) throw error
 }
 
+/**
+ * Invoca una Edge Function y desenvuelve su mensaje de error.
+ * `FunctionsHttpError` no trae el cuerpo en `error.message` (solo un genérico
+ * "non-2xx status code"), sino en `error.context`, que hay que leer como JSON
+ * para llegar al texto en español que devuelve la función.
+ */
+async function invocarFuncion<T>(
+  nombre: string,
+  body: Record<string, unknown>,
+): Promise<T> {
+  const { data, error } = await supabase.functions.invoke(nombre, { body })
+  if (error) {
+    const delContexto = (await error.context?.json?.().catch(() => null))?.error
+    throw new Error(
+      (typeof data === 'object' && data?.error) || delContexto || error.message,
+    )
+  }
+  if (data?.error) throw new Error(data.error)
+  return data as T
+}
+
 export interface CrearProfesionalInput {
   nombre: string
   email: string
@@ -82,19 +103,10 @@ export interface CrearProfesionalInput {
 export async function crearProfesional(
   input: CrearProfesionalInput,
 ): Promise<{ id: string; email: string }> {
-  const { data, error } = await supabase.functions.invoke('crear-profesional', {
-    body: input,
-  })
-  if (error) {
-    // FunctionsHttpError trae la respuesta JSON del error en `context`.
-    const mensaje =
-      (typeof data === 'object' && data?.error) ||
-      (await error.context?.json?.().catch(() => null))?.error ||
-      error.message
-    throw new Error(mensaje)
-  }
-  if (data?.error) throw new Error(data.error)
-  return data
+  return invocarFuncion<{ id: string; email: string }>(
+    'crear-profesional',
+    input as unknown as Record<string, unknown>,
+  )
 }
 
 export interface LinkImpersonacion {
@@ -110,16 +122,33 @@ export interface LinkImpersonacion {
 export async function generarLinkImpersonacion(
   profesionalId: string,
 ): Promise<LinkImpersonacion> {
-  const { data, error } = await supabase.functions.invoke('impersonar-profesional', {
-    body: { profesionalId },
+  return invocarFuncion<LinkImpersonacion>('impersonar-profesional', {
+    profesionalId,
   })
-  if (error) {
-    const mensaje =
-      (typeof data === 'object' && data?.error) ||
-      (await error.context?.json?.().catch(() => null))?.error ||
-      error.message
-    throw new Error(mensaje)
-  }
-  if (data?.error) throw new Error(data.error)
-  return data
+}
+
+/**
+ * Devuelve la contraseña del profesional a la inicial y lo obliga a definir
+ * una propia al entrar. La contraseña la fija el backend, no el cliente.
+ * Permitido a coordinador y administrador (lo valida la Edge Function).
+ */
+export async function resetearPassword(
+  profesionalId: string,
+): Promise<{ profesionalNombre: string; passwordInicial: string }> {
+  return invocarFuncion<{ profesionalNombre: string; passwordInicial: string }>(
+    'resetear-password',
+    { profesionalId },
+  )
+}
+
+/**
+ * Última conexión (último inicio de sesión) de cada profesional, indexada por
+ * id. El dato vive en `auth.users`, inaccesible desde el cliente, así que llega
+ * por el RPC `ultimas_conexiones`, que solo responde a la cuenta administrador
+ * — para cualquier otro rol la llamada falla en la base de datos, no en la UI.
+ */
+export async function getUltimasConexiones(): Promise<Map<string, string | null>> {
+  const { data, error } = await supabase.rpc('ultimas_conexiones')
+  if (error) throw error
+  return new Map(data.map((f) => [f.profesional_id, f.ultima_conexion]))
 }

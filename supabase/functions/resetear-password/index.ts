@@ -13,10 +13,16 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 /**
- * Genera un magic link para que el administrador pueda "actuar como" un
- * profesional — una sesión real de esa persona (no una simulación), así que
- * ve y hace exactamente lo mismo que vería/haría esa cuenta. Restringido a
- * rol==='administrador' (coordinador queda afuera a propósito).
+ * Contraseña a la que se devuelve la cuenta. Se fija aquí, en el servidor, y
+ * no se recibe del cliente: así nadie puede pedir un reseteo a una contraseña
+ * elegida por él para luego entrar como esa persona.
+ */
+const PASSWORD_INICIAL = '12345678'
+
+/**
+ * Devuelve la contraseña de un profesional a la inicial y lo obliga a definir
+ * una propia en su siguiente ingreso (`debe_cambiar_password = true`, que es
+ * lo que revisa AppShell). Lo puede hacer el coordinador o el administrador.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS_HEADERS })
@@ -44,8 +50,11 @@ Deno.serve(async (req) => {
       .select('rol')
       .eq('id', userData.user.id)
       .single()
-    if (!llamante || llamante.rol !== 'administrador') {
-      return jsonResponse({ error: 'Solo el administrador puede actuar como otro profesional' }, 403)
+    if (!llamante || !['coordinador', 'administrador'].includes(llamante.rol)) {
+      return jsonResponse(
+        { error: 'Solo el coordinador o el administrador pueden resetear contraseñas' },
+        403,
+      )
     }
 
     const body = await req.json().catch(() => null)
@@ -54,41 +63,47 @@ Deno.serve(async (req) => {
 
     const { data: objetivo, error: objetivoErr } = await admin
       .from('profesionales')
-      .select('email, nombre, rol')
+      .select('nombre, rol')
       .eq('id', profesionalId)
       .single()
     if (objetivoErr || !objetivo) return jsonResponse({ error: 'Profesional no encontrado' }, 404)
+
+    // La cuenta administrador es la llave maestra del sistema: dejar que un
+    // coordinador la devuelva a una contraseña conocida sería entregarle esa
+    // llave. Su contraseña solo se cambia desde su propio Perfil.
     if (objetivo.rol === 'administrador') {
-      return jsonResponse({ error: 'No tiene sentido actuar como otra cuenta administrador' }, 400)
+      return jsonResponse(
+        { error: 'La contraseña de la cuenta administrador no se puede resetear desde aquí' },
+        403,
+      )
     }
 
-    const { data: link, error: linkErr } = await admin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: objetivo.email,
+    const { error: updateErr } = await admin.auth.admin.updateUserById(profesionalId, {
+      password: PASSWORD_INICIAL,
     })
-    if (linkErr || !link) {
-      return jsonResponse({ error: linkErr?.message ?? 'No se pudo generar el acceso' }, 500)
-    }
+    if (updateErr) return jsonResponse({ error: updateErr.message }, 500)
 
-    // `generateLink` busca por correo y, con signups habilitados, crearía un
-    // usuario nuevo si ese correo no existiera en Auth (p. ej. si alguien editó
-    // el email en `profesionales` sin actualizar Auth). Eso dejaría al
-    // administrador dentro de una cuenta huérfana, sin fila en `profesionales`
-    // y sin rol. Se verifica que el enlace sea del usuario que se pidió.
-    if (link.user?.id !== profesionalId) {
+    // Marca el cambio obligatorio. Si esto fallara, la persona quedaría con la
+    // contraseña conocida y sin obligación de cambiarla, así que se reporta
+    // como error aunque la contraseña ya se haya cambiado.
+    const { error: flagErr } = await admin
+      .from('profesionales')
+      .update({ debe_cambiar_password: true })
+      .eq('id', profesionalId)
+    if (flagErr) {
       return jsonResponse(
         {
           error:
-            'El correo de este profesional no coincide con su cuenta de acceso. ' +
-            'Corrige el correo antes de actuar como esta persona.',
+            'La contraseña se reseteó, pero no se pudo marcar el cambio obligatorio: ' +
+            flagErr.message,
         },
-        409,
+        500,
       )
     }
 
     return jsonResponse({
-      hashed_token: link.properties.hashed_token,
       profesionalNombre: objetivo.nombre,
+      passwordInicial: PASSWORD_INICIAL,
     })
   } catch (e) {
     console.error(e)

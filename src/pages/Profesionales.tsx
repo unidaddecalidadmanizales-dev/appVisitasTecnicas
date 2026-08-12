@@ -3,15 +3,29 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Pencil, Plus, Upload } from 'lucide-react'
+import { KeyRound, Loader2, Pencil, Plus, Upload } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuth } from '@/hooks/useAuth'
 import {
   actualizarProfesional,
   crearProfesional,
   getProfesionales,
+  getUltimasConexiones,
+  resetearPassword,
   subirFirmaProfesional,
   type Profesional,
 } from '@/lib/queries/profesionales'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -310,10 +324,92 @@ function EditarProfesionalDialog({ profesional }: { profesional: Profesional }) 
   )
 }
 
+/**
+ * Formatea la última conexión. `null` significa que la cuenta existe pero esa
+ * persona nunca ha iniciado sesión — es información útil por sí misma, así que
+ * se dice explícitamente en vez de dejar la celda vacía.
+ */
+function textoUltimaConexion(iso: string | null | undefined) {
+  if (iso === undefined) return '—'
+  if (iso === null) return 'Nunca ha entrado'
+  return new Date(iso).toLocaleString('es-CO', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+}
+
+function ResetearPasswordDialog({ profesional }: { profesional: Profesional }) {
+  const [open, setOpen] = useState(false)
+
+  const resetear = useMutation({
+    mutationFn: () => resetearPassword(profesional.id),
+    onSuccess: ({ profesionalNombre, passwordInicial }) => {
+      setOpen(false)
+      toast.success(`Contraseña de ${profesionalNombre} restablecida`, {
+        description: `Ahora es "${passwordInicial}". Se le pedirá cambiarla al entrar.`,
+        duration: 10000,
+      })
+    },
+    onError: (e: Error) =>
+      toast.error('No se pudo resetear la contraseña', { description: e.message }),
+  })
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Resetear contraseña">
+          <KeyRound className="size-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            ¿Resetear la contraseña de {profesional.nombre}?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Su contraseña actual dejará de funcionar y volverá a ser la inicial
+            (<strong>12345678</strong>). La próxima vez que entre, el sistema le
+            pedirá definir una contraseña propia antes de poder usar la app.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={resetear.isPending}>
+            Cancelar
+          </AlertDialogCancel>
+          <AlertDialogAction
+            disabled={resetear.isPending}
+            onClick={(e) => {
+              // Sin esto Radix cierra el diálogo al instante y el estado de
+              // carga del botón no se llega a ver; lo cierra `onSuccess`.
+              e.preventDefault()
+              resetear.mutate()
+            }}
+          >
+            {resetear.isPending && <Loader2 className="size-4 animate-spin" />}
+            Resetear contraseña
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
 export default function Profesionales() {
+  const { rol } = useAuth()
+  const esAdministrador = rol === 'administrador'
+
   const { data: profesionales = [], isLoading } = useQuery({
     queryKey: ['profesionales'],
     queryFn: getProfesionales,
+  })
+
+  // Solo el administrador ve las conexiones. La restricción real vive en el
+  // RPC (que rechaza a cualquier otro rol); esto evita además disparar una
+  // llamada que sabemos que va a fallar.
+  const { data: conexiones } = useQuery({
+    queryKey: ['ultimas-conexiones'],
+    queryFn: getUltimasConexiones,
+    enabled: esAdministrador,
   })
 
   return (
@@ -343,7 +439,8 @@ export default function Profesionales() {
                 <TableHead>Nombre</TableHead>
                 <TableHead>Correo</TableHead>
                 <TableHead>Rol</TableHead>
-                <TableHead className="w-10" />
+                {esAdministrador && <TableHead>Última conexión</TableHead>}
+                <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -358,8 +455,16 @@ export default function Profesionales() {
                       {p.rol === 'coordinador' ? 'Coordinador' : 'Profesional'}
                     </Badge>
                   </TableCell>
+                  {esAdministrador && (
+                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                      {textoUltimaConexion(conexiones?.get(p.id))}
+                    </TableCell>
+                  )}
                   <TableCell>
-                    <EditarProfesionalDialog profesional={p} />
+                    <div className="flex items-center justify-end gap-0.5">
+                      <ResetearPasswordDialog profesional={p} />
+                      <EditarProfesionalDialog profesional={p} />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

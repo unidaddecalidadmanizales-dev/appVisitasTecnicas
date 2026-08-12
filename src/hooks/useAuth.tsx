@@ -7,6 +7,11 @@ import {
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import {
+  estaImpersonando,
+  limpiarImpersonacion,
+  volverACuentaOriginal,
+} from '@/lib/impersonacion'
 import type { Tables } from '@/types/database.types'
 
 /**
@@ -98,6 +103,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [userId])
 
   const signOut = async () => {
+    // Si se está actuando como otro profesional, primero se vuelve a la cuenta
+    // original. Dos razones: `signOut()` usa scope global, así que cerrar
+    // sesión impersonando revocaría los tokens del profesional y lo sacaría de
+    // sus propios dispositivos; y dejar el rastro de impersonación haría que al
+    // volver a entrar apareciera el banner "estás actuando como…" siendo falso.
+    if (estaImpersonando()) {
+      try {
+        await volverACuentaOriginal()
+      } catch {
+        limpiarImpersonacion()
+      }
+    }
     await supabase.auth.signOut()
   }
 
