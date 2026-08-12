@@ -8,7 +8,6 @@ import {
   LayoutGrid,
   Building2,
   ListChecks,
-  Star,
   Users,
   UserCircle,
   UserCog,
@@ -50,7 +49,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/instituciones', label: 'Instituciones', icon: Building2, roles: ['coordinador', 'administrador'] },
   { to: '/procesos', label: 'Procesos', icon: ListChecks, roles: ['coordinador', 'administrador'] },
   { to: '/profesionales', label: 'Profesionales', icon: Users, roles: ['coordinador', 'administrador'] },
-  { to: '/evaluaciones', label: 'Evaluaciones', icon: Star, roles: ['coordinador', 'administrador'] },
   { to: '/actuar-como', label: 'Actuar como', icon: UserCog, roles: ['administrador'] },
   { to: '/perfil', label: 'Perfil', icon: UserCircle, roles: ['profesional', 'coordinador', 'administrador'] },
 ]

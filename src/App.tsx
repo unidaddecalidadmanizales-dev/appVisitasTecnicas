@@ -14,7 +14,6 @@ import Procesos from '@/pages/Procesos'
 import ProcesoDetalle from '@/pages/ProcesoDetalle'
 import Profesionales from '@/pages/Profesionales'
 import ActuarComo from '@/pages/ActuarComo'
-import Evaluaciones from '@/pages/Evaluaciones'
 import Perfil from '@/pages/Perfil'
 import RecuperarPassword from '@/pages/RecuperarPassword'
 import RestablecerPassword from '@/pages/RestablecerPassword'
@@ -79,7 +78,6 @@ function App() {
             <Route path="procesos" element={<Procesos />} />
             <Route path="procesos/:id" element={<ProcesoDetalle />} />
             <Route path="profesionales" element={<Profesionales />} />
-            <Route path="evaluaciones" element={<Evaluaciones />} />
           </Route>
 
           {/* Solo administrador: entrar a la cuenta real de otro profesional. */}
