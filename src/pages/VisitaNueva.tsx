@@ -29,14 +29,14 @@ export default function VisitaNueva() {
       navigate(`/visitas/${visita.id}`)
     },
     onError: (error: Error) => {
-      toast.error('No se pudo crear la visita', { description: error.message })
+      toast.error('No se pudo crear la asistencia técnica', { description: error.message })
     },
   })
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Nueva visita</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Nueva asistencia técnica</h1>
         <p className="text-muted-foreground">
           Elige la institución y el proceso. La visita se crea como borrador y
           podrás completar los datos en los siguientes pasos.

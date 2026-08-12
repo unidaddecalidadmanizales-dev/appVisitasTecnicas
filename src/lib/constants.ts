@@ -25,12 +25,6 @@ export const SEMAFORO_OPCIONES = [
 ] as const
 export type Semaforo = (typeof SEMAFORO_OPCIONES)[number]
 
-/** Bandas que se consideran "necesita atención" en los resúmenes del semáforo. */
-export const SEMAFORO_BANDAS_BAJAS: readonly Semaforo[] = [
-  'Existencia',
-  'Pertinencia',
-]
-
 /** Puntaje de cada calificación para el promedio del semáforo (igual al
  * sistema anterior): "No aplica" no se tiene en cuenta en el promedio. */
 const VALOR_CALIFICACION: Record<string, number> = {

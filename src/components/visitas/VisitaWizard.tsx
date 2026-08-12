@@ -211,7 +211,7 @@ export function VisitaWizard({ visitaId }: Props) {
 
   /**
    * Guarda compromisos, resultado y observaciones sin finalizar la visita.
-   * La usan tanto "Guardar avance" como "Finalizar visita" (que además
+   * La usan tanto "Guardar avance" como "Finalizar asistencia técnica" (que además
    * genera el PDF), así que la lógica de persistencia vive en un solo lugar.
    */
   async function guardarCierreEnDB(): Promise<void> {
@@ -254,7 +254,7 @@ export function VisitaWizard({ visitaId }: Props) {
 
   const finalizar = useMutation({
     mutationFn: async () => {
-      if (!visita || !proceso) throw new Error('Visita no cargada')
+      if (!visita || !proceso) throw new Error('Asistencia técnica no cargada')
       if (!profesional?.firma_url) {
         throw new Error(
           'Configura tu firma digital en Perfil antes de finalizar',
@@ -269,12 +269,12 @@ export function VisitaWizard({ visitaId }: Props) {
     },
     onSuccess: async () => {
       await refetchVisita()
-      queryClient.invalidateQueries({ queryKey: ['mis-visitas'] })
+      queryClient.invalidateQueries({ queryKey: ['visitas'] })
       setStep(4)
-      toast.success('Visita finalizada')
+      toast.success('Asistencia técnica finalizada')
     },
     onError: (e: Error) =>
-      toast.error('No se pudo finalizar la visita', { description: e.message }),
+      toast.error('No se pudo finalizar la asistencia técnica', { description: e.message }),
   })
 
   if (cargandoVisita || cargandoProceso || !visita || !proceso) {
@@ -502,7 +502,7 @@ export function VisitaWizard({ visitaId }: Props) {
                     >
                       configurarla en tu Perfil
                     </Link>{' '}
-                    antes de poder finalizar esta visita.
+                    antes de poder finalizar esta asistencia técnica.
                   </p>
                 </div>
               )}
@@ -541,7 +541,7 @@ export function VisitaWizard({ visitaId }: Props) {
                   {finalizar.isPending && (
                     <Loader2 className="size-4 animate-spin" />
                   )}
-                Finalizar visita
+                Finalizar asistencia técnica
                 </Button>
               </div>
             </div>
@@ -592,7 +592,12 @@ export function VisitaWizard({ visitaId }: Props) {
             <CardTitle>Resumen de la asistencia técnica</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResumenVisita visita={visita} indicadores={indicadores} respuestas={respuestas} />
+            <ResumenVisita
+              visita={visita}
+              indicadores={indicadores}
+              respuestas={respuestas}
+              compromisos={compromisosGuardadosQuery.data ?? []}
+            />
           </CardContent>
         </Card>
       )}

@@ -43,10 +43,10 @@ type NavItem = {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/visitas', label: 'Todas las visitas', icon: ClipboardCheck, roles: ['coordinador', 'administrador'] },
-  { to: '/mis-visitas', label: 'Mis visitas', icon: ClipboardList, roles: ['profesional', 'coordinador', 'administrador'] },
-  { to: '/visitas/nueva', label: 'Nueva visita', icon: FilePlus2, roles: ['profesional', 'coordinador', 'administrador'] },
-  { to: '/semaforo', label: 'Semáforo', icon: LayoutGrid, roles: ['coordinador', 'administrador'] },
+  { to: '/visitas', label: 'Todas las asistencias', icon: ClipboardCheck, roles: ['coordinador', 'administrador'] },
+  { to: '/mis-visitas', label: 'Mis asistencias', icon: ClipboardList, roles: ['profesional', 'coordinador', 'administrador'] },
+  { to: '/visitas/nueva', label: 'Nueva asistencia', icon: FilePlus2, roles: ['profesional', 'coordinador', 'administrador'] },
+  { to: '/semaforo', label: 'Semáforo', icon: LayoutGrid, roles: ['profesional', 'coordinador', 'administrador'] },
   { to: '/instituciones', label: 'Instituciones', icon: Building2, roles: ['coordinador', 'administrador'] },
   { to: '/procesos', label: 'Procesos', icon: ListChecks, roles: ['coordinador', 'administrador'] },
   { to: '/profesionales', label: 'Profesionales', icon: Users, roles: ['coordinador', 'administrador'] },
@@ -80,7 +80,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-semibold">Visitas técnicas</p>
+          <p className="text-sm font-semibold">Asistencias técnicas</p>
           <p className="text-xs font-medium text-primary">Unidad de Calidad</p>
         </div>
       </div>

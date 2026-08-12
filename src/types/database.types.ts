@@ -449,6 +449,18 @@ export type Database = {
       is_coordinador: { Args: never; Returns: boolean }
       marcar_password_cambiada: { Args: never; Returns: undefined }
       reordenar_indicadores: { Args: { p_cambios: Json }; Returns: undefined }
+      resultados_semaforo: {
+        Args: never
+        Returns: {
+          fecha: string
+          id: string
+          institucion_id: string
+          numero_visita: number
+          proceso_id: string
+          resultado_semaforo: string
+        }[]
+      }
+      resumen_asistencia: { Args: { p_visita_id: string }; Returns: Json }
       siguiente_numero_visita: {
         Args: { p_institucion: string; p_proceso: string }
         Returns: number

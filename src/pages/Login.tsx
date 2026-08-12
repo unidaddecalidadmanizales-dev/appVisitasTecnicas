@@ -66,7 +66,7 @@ export default function Login() {
             alt="Alcaldía de Manizales"
             className="mb-3 w-64"
           />
-          <CardTitle className="text-xl">Sistema de visitas técnicas</CardTitle>
+          <CardTitle className="text-xl">Sistema de asistencias técnicas</CardTitle>
           <CardDescription>
             Unidad de Calidad · Secretaría de Educación
           </CardDescription>

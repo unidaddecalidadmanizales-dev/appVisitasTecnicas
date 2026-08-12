@@ -39,6 +39,17 @@ Extraída por muestreo de píxeles real del escudo (no inventada):
   misma progresión. **Los dos tienen que moverse juntos**: estuvieron
   desalineados (Apropiación y Pertinencia invertidas), y el efecto fue que la
   segunda mejor banda se pintaba naranja y una peor, amarillo.
+- Hay **dos** mapas de color del semáforo y ambos hay que tocarlos:
+  `SEMAFORO_COLOR`/`SEMAFORO_SHADOW` en `ResultadoSemaforo.tsx` (sellos de la
+  matriz, pastilla) y `SEMAFORO_ESTILO` en `ResumenVisita.tsx` (badge del
+  resumen). El segundo se quedó con el orden viejo cuando se corrigió el
+  primero.
+
+## Vocabulario de la interfaz
+Lo que el usuario llama **"asistencia técnica"**, no "visita". El código, las
+rutas (`/visitas`, `/mis-visitas`), las tablas y los nombres de archivo siguen
+diciendo `visita` — el renombre fue solo de textos visibles. Al escribir UI
+nueva: "asistencia técnica" en pantalla, `visita` en el código.
 - Dark mode: mismos hues, con L más alto para legibilidad (no se cae a
   gris neutro como el shadcn por defecto — la marca se mantiene en ambos
   temas).
@@ -110,15 +121,37 @@ página y sidebar quedan con una calidez consistente sin tocar el contraste
     (`sticky left-0`) fijos. Con 112 filas, sin esto la matriz se lee a
     ciegas apenas se hace scroll. Ojo con el z-index: la celda de la esquina
     necesita estar por encima de ambos.
-  - **Dato desactualizado** (más de `MESES_VIGENCIA` = 12 meses, ver
-    `src/lib/semaforo.ts`): el sello se atenúa (`opacity-35`) en vez de
-    cambiar de color. El hue sigue comunicando el nivel de madurez; lo que se
-    apaga es la confianza en el dato. No inventar un color nuevo para esto.
-  - Los totales por fila (cobertura, resultados bajos) y por columna (número
-    bajo cada sigla) son parte del patrón, no un extra: son lo que convierte
-    2000 celdas en algo que responde una pregunta.
+  - Los totales de cobertura por fila (cuántos procesos evaluados de 18) y por
+    columna (en cuántas instituciones se evaluó ese proceso, bajo la sigla)
+    son parte del patrón, no un extra: son lo que convierte 2000 celdas en
+    algo que responde una pregunta.
+  - **No** marcar antigüedad del dato: se probó atenuar los sellos de
+    evaluaciones con más de un año y el usuario lo descartó por no ser
+    relevante para este proceso.
+  - **Vocabulario**: no usar "bandas bajas" ni agrupar Existencia+Pertinencia
+    como una categoría de riesgo — se descartó. Los cuatro niveles se nombran
+    siempre por su nombre propio.
 - **Derivaciones del semáforo** en `src/lib/semaforo.ts`, no en el
   componente: el archivo de UI solo formatea y pinta.
+- **Filtros del semáforo** centralizados en `useSemaforoFiltros` (texto,
+  sector, valoración, orden, solo-con-datos + todo lo derivado: filas,
+  columnas, conteos). La barra de "Valoración de las asistencias técnicas"
+  lee `conteosVisibles` del mismo hook que la matriz, no recalcula por su
+  cuenta — si se agrega un filtro nuevo y cada uno calculara aparte, se
+  irían desalineando.
+- **Botones de año** (`SemaforoControles.tsx`), no un `<select>`: son pocos
+  (uno por año con datos) y cambiar de año es la acción principal de la
+  pantalla, no un detalle secundario que amerite esconderse en un dropdown.
+  El botón sin año se llama **"Actual"**, no "Hoy": hay asistencias con
+  fecha futura en los datos reales, así que "lo último registrado" no es lo
+  mismo que "lo de hasta hoy".
+  - Semántica del corte por año (`construirCeldas(resultados, hastaAnio)`
+    en `semaforo.ts`): es una foto del pasado, no un filtro de "solo ese
+    año". Con 2025 seleccionado, una institución evaluada en 2024 y no
+    vuelta a visitar sigue mostrando su resultado de 2024 — porque ese era
+    su estado real al cerrar 2025. Verificado contra los datos: al cierre
+    de 2025 hay 4 celdas heredadas de 2024; sin corte, 387 de las 518
+    celdas vienen de años anteriores al actual.
 
 ## Fondos de pantallas "portada" (Login)
 Las pantallas de trabajo (Semáforo, Instituciones, wizard) van sobre

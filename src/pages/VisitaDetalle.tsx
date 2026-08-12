@@ -9,7 +9,9 @@ export default function VisitaDetalle() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Visita</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Asistencia técnica
+        </h1>
       </div>
       <VisitaWizard visitaId={id} />
     </div>

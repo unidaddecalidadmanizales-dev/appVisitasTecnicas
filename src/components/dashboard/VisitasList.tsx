@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Eye, Loader2, Pencil, Search, Trash2 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { eliminarVisita, getMisVisitas } from '@/lib/queries/visitas'
+import { eliminarVisita, getVisitas } from '@/lib/queries/visitas'
 import { useAuth } from '@/hooks/useAuth'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -46,17 +46,19 @@ export function VisitasList({ modo = 'propias' }: VisitasListProps) {
   const puedeEliminarFinalizadas = rol === 'coordinador' || rol === 'administrador'
   const mostrarTodas = modo === 'todas' && puedeEliminarFinalizadas
   const queryClient = useQueryClient()
-  const { data: todasLasVisitas = [], isLoading } = useQuery({
-    queryKey: ['mis-visitas'],
-    queryFn: getMisVisitas,
-  })
 
-  const visitas = useMemo(() => {
-    // "Todas las visitas" es la vista de coordinación: los borradores son
-    // trabajo en curso de cada profesional, no informes listos para revisar.
-    if (mostrarTodas) return todasLasVisitas.filter((v) => v.estado === 'finalizado')
-    return todasLasVisitas.filter((v) => v.profesional_id === profesional?.id)
-  }, [todasLasVisitas, mostrarTodas, profesional?.id])
+  // "Todas las asistencias" es la vista de coordinación: los borradores son
+  // trabajo en curso de cada profesional, no informes listos para revisar.
+  // En modo 'propias' se filtra por profesional en el servidor.
+  const filtro = mostrarTodas
+    ? { soloFinalizadas: true }
+    : { profesionalId: profesional?.id }
+
+  const { data: visitas = [], isLoading } = useQuery({
+    queryKey: ['visitas', mostrarTodas ? 'todas' : profesional?.id],
+    queryFn: () => getVisitas(filtro),
+    enabled: mostrarTodas || Boolean(profesional?.id),
+  })
 
   const [busqueda, setBusqueda] = useState('')
   const [estado, setEstado] = useState<'todas' | 'borrador' | 'finalizado'>('todas')
@@ -100,8 +102,8 @@ export function VisitasList({ modo = 'propias' }: VisitasListProps) {
   const eliminar = useMutation({
     mutationFn: eliminarVisita,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['mis-visitas'] })
-      toast.success('Visita eliminada')
+      queryClient.invalidateQueries({ queryKey: ['visitas'] })
+      toast.success('Asistencia técnica eliminada')
     },
     onError: (e: Error) =>
       toast.error('No se pudo eliminar', { description: e.message }),
@@ -111,7 +113,7 @@ export function VisitasList({ modo = 'propias' }: VisitasListProps) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
-        Cargando visitas…
+        Cargando asistencias técnicas…
       </div>
     )
   }
@@ -120,8 +122,8 @@ export function VisitasList({ modo = 'propias' }: VisitasListProps) {
     return (
       <p className="text-sm text-muted-foreground">
         {mostrarTodas
-          ? 'Todavía no hay visitas registradas.'
-          : 'No tienes visitas todavía. Crea una desde "Nueva visita".'}
+          ? 'Todavía no hay asistencias técnicas registradas.'
+          : 'No tienes asistencias técnicas todavía. Crea una desde "Nueva asistencia técnica".'}
       </p>
     )
   }
@@ -186,7 +188,7 @@ export function VisitasList({ modo = 'propias' }: VisitasListProps) {
 
       {filtradas.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Ninguna visita coincide con el filtro.
+          Ninguna asistencia técnica coincide con el filtro.
         </p>
       ) : (
         <div className="space-y-3">
@@ -238,7 +240,7 @@ export function VisitasList({ modo = 'propias' }: VisitasListProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Eliminar visita"
+                        aria-label="Eliminar asistencia técnica"
                         disabled={eliminar.isPending}
                       >
                         <Trash2 className="size-4" />
@@ -246,13 +248,13 @@ export function VisitasList({ modo = 'propias' }: VisitasListProps) {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>¿Eliminar esta visita?</AlertDialogTitle>
+                        <AlertDialogTitle>¿Eliminar esta asistencia técnica?</AlertDialogTitle>
                         <AlertDialogDescription>
                           {v.instituciones.nombre} — {v.procesos.nombre}. Se
                           eliminarán también sus respuestas y compromisos
                           guardados.
                           {finalizada &&
-                            ' Esta visita ya está finalizada: también se perderá el informe PDF generado.'}{' '}
+                            ' Esta asistencia técnica ya está finalizada: también se perderá el informe PDF generado.'}{' '}
                           Esta acción no se puede deshacer.
                         </AlertDialogDescription>
                       </AlertDialogHeader>

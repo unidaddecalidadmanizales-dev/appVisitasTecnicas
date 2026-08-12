@@ -9,16 +9,16 @@ export default function MisVisitas() {
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">
-            Mis visitas
+            Mis asistencias técnicas
           </h1>
           <p className="text-muted-foreground">
-            Visitas asignadas, pendientes y borradores.
+            Asistencias técnicas asignadas, pendientes y borradores.
           </p>
         </div>
         <Button asChild>
           <Link to="/visitas/nueva">
             <Plus className="size-4" />
-            Nueva visita
+            Nueva asistencia técnica
           </Link>
         </Button>
       </div>

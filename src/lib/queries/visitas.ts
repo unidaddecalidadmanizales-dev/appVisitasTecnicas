@@ -15,17 +15,36 @@ export type VisitaConRelaciones = Visita & {
 const RELACIONES =
   '*, instituciones(nombre, sector, sede), procesos(nombre, clave, objetivo_fijo), profesionales(nombre)'
 
-/** Lista de visitas visibles para el usuario (RLS filtra por rol). */
-export async function getMisVisitas(): Promise<VisitaConRelaciones[]> {
-  const { data, error } = await supabase
+/**
+ * Lista de asistencias técnicas para los listados.
+ *
+ * El filtro va explícito y no delegado a la RLS: desde que el semáforo es
+ * visible para todos, la política de `visitas` deja leer todas las
+ * finalizadas, así que sin `profesionalId` un profesional se descargaría las
+ * de todo el equipo para luego descartarlas en el cliente.
+ */
+export async function getVisitas(
+  opciones: { profesionalId?: string; soloFinalizadas?: boolean } = {},
+): Promise<VisitaConRelaciones[]> {
+  let consulta = supabase
     .from('visitas')
     .select(RELACIONES)
     .order('created_at', { ascending: false })
+
+  if (opciones.profesionalId) {
+    consulta = consulta.eq('profesional_id', opciones.profesionalId)
+  }
+  if (opciones.soloFinalizadas) {
+    consulta = consulta.eq('estado', 'finalizado')
+  }
+
+  const { data, error } = await consulta
   if (error) throw error
   return data as unknown as VisitaConRelaciones[]
 }
 
 export type ResultadoSemaforoRow = {
+  id: string
   institucion_id: string
   proceso_id: string
   resultado_semaforo: string
@@ -34,19 +53,45 @@ export type ResultadoSemaforoRow = {
 }
 
 /**
- * Resultados de las visitas finalizadas (para el semáforo). Se trae todo y se
- * reduce en el cliente a "la más reciente por institución+proceso" — el
- * volumen de datos de este sistema no justifica una vista SQL aparte.
+ * Resultados de las asistencias finalizadas (para el semáforo). Va por RPC y no
+ * por la tabla porque el semáforo lo ve todo el equipo, mientras que la RLS de
+ * `visitas` solo deja leer las propias: la función expone únicamente las seis
+ * columnas que se pintan en la matriz, sin profesional ni observaciones.
+ *
+ * Llega ordenado por numero_visita desc; la reducción a "la más reciente por
+ * institución+proceso" se hace en el cliente (ver `construirCeldas`).
  */
 export async function getResultadosSemaforo(): Promise<ResultadoSemaforoRow[]> {
-  const { data, error } = await supabase
-    .from('visitas')
-    .select('institucion_id, proceso_id, resultado_semaforo, fecha, numero_visita')
-    .eq('estado', 'finalizado')
-    .not('resultado_semaforo', 'is', null)
-    .order('numero_visita', { ascending: false })
+  const { data, error } = await supabase.rpc('resultados_semaforo')
   if (error) throw error
   return data as ResultadoSemaforoRow[]
+}
+
+export type RespuestaConIndicador = Respuesta & {
+  indicadores: Pick<Tables<'indicadores'>, 'id' | 'criterio' | 'orden'> | null
+}
+
+export type VisitaResumen = VisitaConRelaciones & {
+  respuestas: RespuestaConIndicador[]
+  compromisos: Compromiso[]
+}
+
+/**
+ * Asistencia completa para el resumen de solo lectura: relaciones, respuestas
+ * con su indicador y compromisos, en una sola llamada.
+ *
+ * Va por RPC por lo mismo que `getResultadosSemaforo`: desde el semáforo se
+ * abre el resumen de cualquier asistencia finalizada, también de otro
+ * profesional, y eso no lo permite la RLS de `visitas`. La función solo
+ * entrega finalizadas a quien no sea su autor ni coordinación, así que los
+ * borradores siguen siendo privados.
+ */
+export async function getResumenVisita(id: string): Promise<VisitaResumen> {
+  const { data, error } = await supabase.rpc('resumen_asistencia', {
+    p_visita_id: id,
+  })
+  if (error) throw error
+  return data as unknown as VisitaResumen
 }
 
 export async function getVisita(id: string): Promise<VisitaConRelaciones> {

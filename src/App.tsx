@@ -65,10 +65,15 @@ function App() {
           <Route path="mis-visitas" element={<MisVisitas />} />
           <Route path="visitas/nueva" element={<VisitaNueva />} />
 
+          {/* El semáforo lo ve cualquier rol: es el panorama común del equipo.
+              La RLS de `visitas` deja leer las finalizadas a todo usuario
+              autenticado (ver migración semaforo_visible_para_profesionales),
+              así que un profesional lo ve completo, no solo sus resultados. */}
+          <Route path="semaforo" element={<Semaforo />} />
+
           {/* Coordinador y administrador (mismos permisos) */}
           <Route element={<ProtectedRoute roles={['coordinador', 'administrador']} />}>
             <Route path="visitas" element={<TodasLasVisitas />} />
-            <Route path="semaforo" element={<Semaforo />} />
             <Route path="instituciones" element={<Instituciones />} />
             <Route path="instituciones/:id" element={<InstitucionDetalle />} />
             <Route path="procesos" element={<Procesos />} />
