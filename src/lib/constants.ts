@@ -8,13 +8,28 @@ export const CALIFICACIONES = [
 ] as const
 export type Calificacion = (typeof CALIFICACIONES)[number]
 
+/**
+ * Escala de madurez de la Guía 34 del MEN, de menor a mayor. El orden importa:
+ * de aquí salen los colores y el orden de la leyenda, y `calcularSemaforo`
+ * asigna las bandas siguiendo esta misma progresión.
+ *
+ * Antes este arreglo tenía Apropiación y Pertinencia invertidas respecto al
+ * cálculo, así que los resultados de Apropiación (la segunda mejor banda) se
+ * pintaban de naranja y los de Pertinencia (peores) de amarillo.
+ */
 export const SEMAFORO_OPCIONES = [
   'Existencia',
-  'Apropiación',
   'Pertinencia',
+  'Apropiación',
   'Mejora continua',
 ] as const
 export type Semaforo = (typeof SEMAFORO_OPCIONES)[number]
+
+/** Bandas que se consideran "necesita atención" en los resúmenes del semáforo. */
+export const SEMAFORO_BANDAS_BAJAS: readonly Semaforo[] = [
+  'Existencia',
+  'Pertinencia',
+]
 
 /** Puntaje de cada calificación para el promedio del semáforo (igual al
  * sistema anterior): "No aplica" no se tiene en cuenta en el promedio. */

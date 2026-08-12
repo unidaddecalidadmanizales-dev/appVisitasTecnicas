@@ -29,10 +29,16 @@ Extraída por muestreo de píxeles real del escudo (no inventada):
 - **Teal** `oklch(0.497 0.089 218)` (rgb `#006e84`, nevado del escudo) →
   `--brand-teal` / `--ring`. Uso restringido: foco, acentos puntuales.
 - El **rojo y verde del escudo NO se usan como marca** — quedan exclusivos
-  del semáforo de resultados (`Existencia`→rojo, `Apropiación`→naranja,
-  `Pertinencia`→amarillo, `Mejora continua`→verde, en
+  del semáforo de resultados. La escala es la de la **Guía 34 del MEN**, de
+  menor a mayor madurez: `Existencia`→rojo, `Pertinencia`→naranja,
+  `Apropiación`→amarillo, `Mejora continua`→verde (en
   `src/components/visitas/ResultadoSemaforo.tsx`). No mezclar significados:
   si se necesita un color de marca nuevo, no usar rojo ni verde.
+- El orden vive en `SEMAFORO_OPCIONES` (`src/lib/constants.ts`) y de ahí
+  salen colores y leyenda; `calcularSemaforo` asigna las bandas siguiendo esa
+  misma progresión. **Los dos tienen que moverse juntos**: estuvieron
+  desalineados (Apropiación y Pertinencia invertidas), y el efecto fue que la
+  segunda mejor banda se pintaba naranja y una peor, amarillo.
 - Dark mode: mismos hues, con L más alto para legibilidad (no se cae a
   gris neutro como el shadcn por defecto — la marca se mantiene en ambos
   temas).
@@ -90,12 +96,29 @@ página y sidebar quedan con una calidez consistente sin tocar el contraste
 ## Patrones ya establecidos
 - **Stat/cifra de contexto** (`StatCard.tsx`): número grande + label, borde
   izquierdo sutil, sin ícono ni tarjeta con sombra. Ver `Semaforo.tsx`.
-- **Matriz institución × proceso** (`SemaforoTable.tsx`): celdas como
-  pequeños "sellos" cuadrados (`size-4 rounded-[3px]`) con el color del
-  semáforo; sin dato = cuadro con borde punteado neutro (nunca vacío/roto a
-  la vista). Encabezados de columna en texto vertical
-  (`[writing-mode:vertical-rl] rotate-180`), **no** rotación diagonal a
-  -45° — se recorta entre columnas cuando hay muchas.
+- **Matriz institución × proceso** (`SemaforoMatriz.tsx`): celdas como
+  pequeños "sellos" cuadrados con el color del semáforo; sin dato = cuadro
+  con borde punteado neutro (nunca vacío/roto a la vista).
+  - Encabezados de columna con la **abreviatura** del proceso (`PEI`, `PLEO`,
+    `TIC`…, columna `procesos.abreviatura`, todos la tienen) en horizontal,
+    con el nombre completo en `title`. Sustituye al texto vertical
+    (`[writing-mode:vertical-rl]`) de la versión anterior: con 18 columnas
+    costaba 160px de alto de encabezado y obligaba a girar la cabeza para
+    leerlo. Tampoco usar rotación diagonal a -45°, que se recorta.
+  - La tabla va dentro de un panel de alto acotado (`max-h-[70vh]
+    overflow-auto`) con encabezado (`sticky top-0`) y primera columna
+    (`sticky left-0`) fijos. Con 112 filas, sin esto la matriz se lee a
+    ciegas apenas se hace scroll. Ojo con el z-index: la celda de la esquina
+    necesita estar por encima de ambos.
+  - **Dato desactualizado** (más de `MESES_VIGENCIA` = 12 meses, ver
+    `src/lib/semaforo.ts`): el sello se atenúa (`opacity-35`) en vez de
+    cambiar de color. El hue sigue comunicando el nivel de madurez; lo que se
+    apaga es la confianza en el dato. No inventar un color nuevo para esto.
+  - Los totales por fila (cobertura, resultados bajos) y por columna (número
+    bajo cada sigla) son parte del patrón, no un extra: son lo que convierte
+    2000 celdas en algo que responde una pregunta.
+- **Derivaciones del semáforo** en `src/lib/semaforo.ts`, no en el
+  componente: el archivo de UI solo formatea y pinta.
 
 ## Fondos de pantallas "portada" (Login)
 Las pantallas de trabajo (Semáforo, Instituciones, wizard) van sobre
