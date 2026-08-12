@@ -91,7 +91,6 @@ async function invocarFuncion<T>(
 export interface CrearProfesionalInput {
   nombre: string
   email: string
-  password: string
   rol: Rol
 }
 

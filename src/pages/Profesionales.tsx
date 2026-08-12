@@ -102,7 +102,6 @@ function FirmaInput({
 const crearSchema = z.object({
   nombre: z.string().min(2, 'Ingresa el nombre'),
   email: z.string().email('Correo inválido'),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
   rol: z.enum(['profesional', 'coordinador']),
 })
 type CrearValues = z.infer<typeof crearSchema>
@@ -113,7 +112,7 @@ function NuevoProfesionalDialog() {
   const queryClient = useQueryClient()
   const form = useForm<CrearValues>({
     resolver: zodResolver(crearSchema),
-    defaultValues: { nombre: '', email: '', password: '', rol: 'profesional' },
+    defaultValues: { nombre: '', email: '', rol: 'profesional' },
   })
 
   const crear = useMutation({
@@ -172,23 +171,6 @@ function NuevoProfesionalDialog() {
             )}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password">Contraseña inicial</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              {...form.register('password')}
-            />
-            {form.formState.errors.password && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.password.message}
-              </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              El profesional podrá cambiarla luego desde su Perfil.
-            </p>
-          </div>
-          <div className="space-y-1.5">
             <Label htmlFor="rol">Rol</Label>
             <Select
               defaultValue={form.getValues('rol')}
@@ -206,6 +188,10 @@ function NuevoProfesionalDialog() {
             </Select>
           </div>
           <FirmaInput onFileSelected={setFirmaFile} />
+          <p className="text-xs text-muted-foreground">
+            Su contraseña inicial será <strong>12345678</strong>; el sistema le
+            pedirá cambiarla la primera vez que entre.
+          </p>
           <Button type="submit" className="w-full" disabled={crear.isPending}>
             {crear.isPending && <Loader2 className="size-4 animate-spin" />}
             Crear profesional
