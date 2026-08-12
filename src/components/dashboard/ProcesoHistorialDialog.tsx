@@ -89,7 +89,7 @@ export function ProcesoHistorialDialog({
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium">
-                        N.º {v.numero_visita} · {formatearFecha(v.fecha)}
+                        {formatearFecha(v.fecha)}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
                         {v.profesionales.nombre}
