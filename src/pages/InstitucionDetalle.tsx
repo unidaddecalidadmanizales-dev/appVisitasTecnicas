@@ -11,6 +11,10 @@ import {
   SEMAFORO_SHADOW,
 } from '@/components/visitas/ResultadoSemaforo'
 import { VisitaResumenDialog } from '@/components/dashboard/VisitaResumenDialog'
+import {
+  ProcesoHistorialDialog,
+  type ProcesoSeleccionado,
+} from '@/components/dashboard/ProcesoHistorialDialog'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import {
@@ -39,15 +43,20 @@ interface CeldaProceso {
  * asistencia finalizada. A diferencia de la matriz general, aquí no hace
  * falta abreviar ni acotar el alto — son ~18 procesos como mucho — así que
  * cada uno se lee con su nombre completo y la fecha, sin pasar el cursor.
+ *
+ * Cada proceso es clickable siempre, tenga o no resultado: abre el historial
+ * completo de ese proceso en esta institución (no directo el resumen), porque
+ * puede haber asistencias anteriores o borradores en curso que valga la pena
+ * ver aunque la última finalizada no exista todavía.
  */
 function SemaforoInstitucion({
   procesos,
   visitas,
-  onAbrirResumen,
+  onAbrirProceso,
 }: {
   procesos: { id: string; nombre: string }[]
   visitas: VisitaConRelaciones[]
-  onAbrirResumen: (visitaId: string) => void
+  onAbrirProceso: (proceso: ProcesoSeleccionado) => void
 }) {
   const celdaPorProceso = useMemo(() => {
     const mapa = new Map<string, CeldaProceso>()
@@ -75,13 +84,10 @@ function SemaforoInstitucion({
           <button
             key={proceso.id}
             type="button"
-            disabled={!celda}
-            onClick={() => celda && onAbrirResumen(celda.visitaId)}
+            onClick={() => onAbrirProceso(proceso)}
             className={cn(
-              'flex items-center gap-3 rounded-lg border p-3 text-left transition-colors',
-              celda
-                ? 'hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
-                : 'cursor-default opacity-60',
+              'flex items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              !celda && 'opacity-60',
             )}
           >
             <span
@@ -196,6 +202,9 @@ function HistorialAsistencias({
 export default function InstitucionDetalle() {
   const { id } = useParams<{ id: string }>()
   const [visitaAbierta, setVisitaAbierta] = useState<string | null>(null)
+  const [procesoAbierto, setProcesoAbierto] = useState<ProcesoSeleccionado | null>(
+    null,
+  )
 
   const { data: institucion, isLoading: cargandoInstitucion } = useQuery({
     queryKey: ['institucion', id],
@@ -256,7 +265,7 @@ export default function InstitucionDetalle() {
             <SemaforoInstitucion
               procesos={procesos}
               visitas={visitas}
-              onAbrirResumen={setVisitaAbierta}
+              onAbrirProceso={setProcesoAbierto}
             />
           </section>
 
@@ -272,8 +281,21 @@ export default function InstitucionDetalle() {
         </div>
       )}
 
+      <ProcesoHistorialDialog
+        proceso={procesoAbierto}
+        visitas={visitas}
+        onOpenChange={(abierto) => {
+          if (!abierto) setProcesoAbierto(null)
+        }}
+        onAbrirResumen={setVisitaAbierta}
+      />
+
+      {/* mostrarPdf: a diferencia del semáforo general, esta página es "revisar
+          una asistencia pasada de esta institución" — sí tiene sentido bajar
+          el informe oficial desde aquí. */}
       <VisitaResumenDialog
         visitaId={visitaAbierta}
+        mostrarPdf
         onOpenChange={(abierto) => {
           if (!abierto) setVisitaAbierta(null)
         }}

@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
+import { FileDown, Loader2 } from 'lucide-react'
 import { getResumenVisita, type VisitaResumen } from '@/lib/queries/visitas'
 import { ResumenVisita } from '@/components/visitas/ResumenVisita'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,15 @@ function indicadoresDesdeRespuestas(visita: VisitaResumen) {
 interface Props {
   visitaId: string | null
   onOpenChange: (abierto: boolean) => void
+  /**
+   * Muestra el botón "Ver / descargar PDF" cuando la visita lo tiene. Por
+   * defecto no: desde el semáforo general (2000 celdas) se viene a entender
+   * de un vistazo por qué esa celda tiene ese color, no a descargar el
+   * documento oficial. Se activa desde el detalle de institución, que es una
+   * vista de "revisar una asistencia pasada" y sí tiene sentido bajar el PDF
+   * ahí.
+   */
+  mostrarPdf?: boolean
 }
 
 /**
@@ -36,11 +46,12 @@ interface Props {
  * semáforo. Reutiliza `ResumenVisita`, el mismo componente que se ve al abrir
  * una asistencia finalizada, para que el resumen sea uno solo y no dos que se
  * van separando con el tiempo.
- *
- * A propósito no muestra ni enlaza el PDF del informe: aquí se viene a entender
- * por qué esa celda tiene ese color, no a descargar el documento oficial.
  */
-export function VisitaResumenDialog({ visitaId, onOpenChange }: Props) {
+export function VisitaResumenDialog({
+  visitaId,
+  onOpenChange,
+  mostrarPdf = false,
+}: Props) {
   const { data: visita, isLoading } = useQuery({
     queryKey: ['resumen-visita', visitaId],
     queryFn: () => getResumenVisita(visitaId!),
@@ -70,6 +81,15 @@ export function VisitaResumenDialog({ visitaId, onOpenChange }: Props) {
               <DialogTitle>{visita.instituciones.nombre}</DialogTitle>
               <DialogDescription>{visita.procesos.nombre}</DialogDescription>
             </DialogHeader>
+
+            {mostrarPdf && visita.pdf_url && (
+              <Button asChild className="w-fit">
+                <a href={visita.pdf_url} target="_blank" rel="noreferrer">
+                  <FileDown className="size-4" />
+                  Ver / descargar PDF
+                </a>
+              </Button>
+            )}
 
             <ResumenVisita
               visita={visita}
