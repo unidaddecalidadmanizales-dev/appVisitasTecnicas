@@ -40,18 +40,14 @@ export function SemaforoControles({
     <div className="space-y-3">
       {anios.length > 1 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">Ver estado</span>
+          <span className="text-sm text-muted-foreground">Año</span>
           <div className="flex flex-wrap gap-1.5">
             <Button
               size="sm"
               variant={anio === undefined ? 'default' : 'outline'}
               aria-pressed={anio === undefined}
               onClick={() => onAnioChange(undefined)}
-              // No dice "Hoy" ni "Actual" porque hay asistencias con fecha
-              // futura: esta vista es "lo último registrado", no "lo de
-              // hasta hoy". "Todo" describe sin ambigüedad que es el
-              // histórico completo, sin corte por año.
-              title="La última asistencia técnica de cada institución y proceso, sin corte por año"
+              title="La asistencia técnica más reciente de cada institución y proceso, de cualquier año"
             >
               Todo
             </Button>
@@ -62,7 +58,10 @@ export function SemaforoControles({
                 variant={anio === a ? 'default' : 'outline'}
                 aria-pressed={anio === a}
                 onClick={() => onAnioChange(a)}
-                title={`Cómo estaba el semáforo al 31/12/${a}`}
+                // Filtro estricto: solo asistencias hechas EN ese año, no un
+                // acumulado — una institución sin asistencia ese año se ve
+                // vacía, no arrastra el resultado de otro año.
+                title={`Solo asistencias técnicas realizadas en ${a}`}
               >
                 {a}
               </Button>
@@ -165,7 +164,7 @@ export function SemaforoControles({
             <strong className="text-foreground">{filtros.valoracion}</strong>
           </>
         )}
-        {anio !== undefined && <> · estado al 31/12/{anio}</>}
+        {anio !== undefined && <> · asistencias técnicas de {anio}</>}
       </p>
     </div>
   )

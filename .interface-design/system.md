@@ -142,16 +142,22 @@ página y sidebar quedan con una calidez consistente sin tocar el contraste
 - **Botones de año** (`SemaforoControles.tsx`), no un `<select>`: son pocos
   (uno por año con datos) y cambiar de año es la acción principal de la
   pantalla, no un detalle secundario que amerite esconderse en un dropdown.
-  El botón sin año se llama **"Actual"**, no "Hoy": hay asistencias con
-  fecha futura en los datos reales, así que "lo último registrado" no es lo
-  mismo que "lo de hasta hoy".
-  - Semántica del corte por año (`construirCeldas(resultados, hastaAnio)`
-    en `semaforo.ts`): es una foto del pasado, no un filtro de "solo ese
-    año". Con 2025 seleccionado, una institución evaluada en 2024 y no
-    vuelta a visitar sigue mostrando su resultado de 2024 — porque ese era
-    su estado real al cerrar 2025. Verificado contra los datos: al cierre
-    de 2025 hay 4 celdas heredadas de 2024; sin corte, 387 de las 518
-    celdas vienen de años anteriores al actual.
+  Por defecto se selecciona el año más reciente con datos en cuanto se
+  conoce (`aniosConDatos` ya viene ordenado desc, así que es `anios[0]`) —
+  solo si el usuario no ha tocado el selector todavía, para no pisarle una
+  elección con un refetch. El botón sin año se llama **"Todo"**: se probaron
+  "Hoy" (descartado, hay asistencias con fecha futura en los datos reales) y
+  "Actual" (descartado por ambiguo una vez que hay un año seleccionado por
+  defecto — ¿el año en curso, o sin filtro?).
+  - Semántica del filtro por año (`construirCeldas(resultados, anio)` en
+    `semaforo.ts`): **es un filtro estricto, no una foto acumulada.** Con
+    2025 seleccionado solo entran asistencias realizadas EN 2025 — una
+    institución evaluada en 2024 y no vuelta a visitar en 2025 se ve vacía
+    ("sin asistencia técnica finalizada"), no arrastra el resultado de 2024.
+    Es una corrección explícita: la primera versión hacía lo contrario
+    (foto acumulada al cierre del año) y el usuario la rechazó de plano
+    ("no puede ser que pongamos de filtro 2026 y se vean visitas del
+    2025") — no reintroducir el acumulado.
 
 ## Fondos de pantallas "portada" (Login)
 Las pantallas de trabajo (Semáforo, Instituciones, wizard) van sobre
