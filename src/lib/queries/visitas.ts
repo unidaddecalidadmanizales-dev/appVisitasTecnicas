@@ -24,7 +24,11 @@ const RELACIONES =
  * de todo el equipo para luego descartarlas en el cliente.
  */
 export async function getVisitas(
-  opciones: { profesionalId?: string; soloFinalizadas?: boolean } = {},
+  opciones: {
+    profesionalId?: string
+    institucionId?: string
+    soloFinalizadas?: boolean
+  } = {},
 ): Promise<VisitaConRelaciones[]> {
   let consulta = supabase
     .from('visitas')
@@ -33,6 +37,9 @@ export async function getVisitas(
 
   if (opciones.profesionalId) {
     consulta = consulta.eq('profesional_id', opciones.profesionalId)
+  }
+  if (opciones.institucionId) {
+    consulta = consulta.eq('institucion_id', opciones.institucionId)
   }
   if (opciones.soloFinalizadas) {
     consulta = consulta.eq('estado', 'finalizado')
