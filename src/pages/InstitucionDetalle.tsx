@@ -120,16 +120,14 @@ function HistorialAsistencias({
   visitas,
   onAbrirResumen,
 }: {
+  // Ya llegan de más reciente a más antigua (ver el orden de getVisitas):
+  // no hace falta reordenar aquí.
   visitas: VisitaConRelaciones[]
   onAbrirResumen: (visitaId: string) => void
 }) {
   const navigate = useNavigate()
-  const ordenadas = useMemo(
-    () => [...visitas].sort((a, b) => (a.fecha < b.fecha ? 1 : -1)),
-    [visitas],
-  )
 
-  if (ordenadas.length === 0) {
+  if (visitas.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
         Esta institución todavía no tiene asistencias técnicas registradas.
@@ -150,7 +148,7 @@ function HistorialAsistencias({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {ordenadas.map((v) => {
+          {visitas.map((v) => {
             const finalizada = v.estado === 'finalizado'
             return (
               <TableRow

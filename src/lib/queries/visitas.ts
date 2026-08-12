@@ -22,6 +22,12 @@ const RELACIONES =
  * visible para todos, la política de `visitas` deja leer todas las
  * finalizadas, así que sin `profesionalId` un profesional se descargaría las
  * de todo el equipo para luego descartarlas en el cliente.
+ *
+ * Se ordena por `fecha` (cuándo se hizo la asistencia), no por `created_at`
+ * (cuándo se registró en el sistema): un profesional puede diligenciar hoy
+ * una visita de hace dos semanas, y "más reciente" tiene que significar lo
+ * primero para quien mira el listado, no lo segundo. `created_at` queda solo
+ * como desempate para asistencias del mismo día.
  */
 export async function getVisitas(
   opciones: {
@@ -33,6 +39,7 @@ export async function getVisitas(
   let consulta = supabase
     .from('visitas')
     .select(RELACIONES)
+    .order('fecha', { ascending: false })
     .order('created_at', { ascending: false })
 
   if (opciones.profesionalId) {
